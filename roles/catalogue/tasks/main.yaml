@@ -1,51 +1,47 @@
----
-# 1. First, set up the database so it's active and listening on 0.0.0.0
-- name: Configure MongoDB Server
-  hosts: mongodb
-  become: yes
-  roles:
-    - mongodb
+- name: app setup
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: app-setup.yaml
+  tags:
+  - deployment
 
-# 2. Next, set up your Catalogue application
-- name: Configure Catalogue Application
-  hosts: catalogue
-  become: yes
-  tasks:
-    - name: app setup
-      ansible.builtin.import_role:
-        name: common
-        tasks_from: app-setup.yaml
-      tags: [deployment]
+- name: app setup
+  #ansible.builtin.import_role:
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: nodejs.yaml
+  tags:
+  - deployment
 
-    - name: nodejs setup
-      ansible.builtin.include_role:
-        name: common
-        tasks_from: nodejs.yaml
-      tags: [deployment]
+- name: copy mongo repo
+  ansible.builtin.copy:
+    src: mongo.repo
+    dest: /etc/yum.repos.d/mongo.repo
 
-    - name: copy mongo repo
-      ansible.builtin.copy:
-        src: mongo.repo
-        dest: /etc/yum.repos.d/mongo.repo
+- name: install mongodb client
+  ansible.builtin.package:
+    name: mongodb-mongosh
+    state: present
 
-    - name: install mongodb client
-      ansible.builtin.package:
-        name: mongodb-mongosh
-        state: present
+# - name: connnect to mongodb catalogue
+#   ansible.builtin.command: mongosh {{ MONGODB_HOST }} --quiet --eval "db.getMongo().getDBNames().indexOf('catalogue')"
+#   register: catalogue_output
 
-    # FIXED: Added explicit --host flag and ignore_errors
-    - name: connect to mongodb catalogue
-      ansible.builtin.command: >
-        mongosh --host {{ MONGODB_HOST }} --quiet --eval "db.getMongo().getDBNames().indexOf('catalogue')"
-      register: catalogue_output
-      ignore_errors: yes
+- name: connect to mongodb catalogue
+  ansible.builtin.command: 
+    cmd: mongosh --host {{ MONGODB_HOST }} --quiet --eval "db.getMongo().getDBNames().indexOf('catalogue')"
+  register: catalogue_output
+  ignore_errors: yes
 
-    - name: load products into mongodb
-      ansible.builtin.shell: mongosh --host {{ MONGODB_HOST }} < /app/db/master-data.js
-      when: catalogue_output.stdout | int < 0
+- name: load products into mongodb
+  ansible.builtin.shell: mongosh --host {{ MONGODB_HOST }} </app/db/master-data.js
+  when: catalogue_output.stdout | int < 0
 
-    - name: system setup
-      ansible.builtin.import_role:
-        name: common
-        tasks_from: system-setup.yaml
-      tags: [deployment]
+- name: app setup
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: system-setup.yaml
+  tags:
+  - deployment
+
+  
