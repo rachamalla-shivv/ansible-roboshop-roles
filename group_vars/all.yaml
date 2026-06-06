@@ -1,0 +1,9 @@
+MONGODB_HOST: mongodb.shivv-aws.fun
+REDIS_HOST: redis.shivv-aws.fun
+CATALOGUE_HOST: catalogue.shivv-aws.fun
+CART_HOST: cart.shivv-aws.fun
+USER_HOST: user.shivv-aws.fun
+RABBITMQ_HOST: rabbitmq.shivv-aws.fun
+MYSQL_HOST: mysql.shivv-aws.fun
+SHIPPING_HOST: shipping.shivv-aws.fun
+PAYMENT_HOST: payment.shivv-aws.fun
